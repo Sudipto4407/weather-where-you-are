@@ -66,9 +66,9 @@ export const useWeather = (initialLocation = "New York") => {
       
       const { latitude, longitude, name, country } = geoData.results[0];
       
-      // Then get weather data using those coordinates
+      // Then get weather data using those coordinates, specifying Celsius
       const weatherRes = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=celsius&wind_speed_unit=mph&timezone=auto`
       );
       
       if (!weatherRes.ok) {

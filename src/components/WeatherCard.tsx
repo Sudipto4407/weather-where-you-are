@@ -36,13 +36,13 @@ const WeatherCard: React.FC<WeatherCardProps> = ({ weather }) => {
 
         <div className="mt-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-center md:text-left mb-4 md:mb-0">
-            <span className="text-6xl font-bold">{Math.round(weather.temperature)}°</span>
+            <span className="text-6xl font-bold">{Math.round(weather.temperature)}°C</span>
             <div className="mt-2 text-gray-600 dark:text-gray-300">
-              Feels like {Math.round(weather.feelsLike)}°
+              Feels like {Math.round(weather.feelsLike)}°C
             </div>
             <div className="mt-1">
-              <span className="text-gray-700 dark:text-gray-200">H: {Math.round(weather.high)}° </span>
-              <span className="text-gray-700 dark:text-gray-200">L: {Math.round(weather.low)}°</span>
+              <span className="text-gray-700 dark:text-gray-200">H: {Math.round(weather.high)}°C </span>
+              <span className="text-gray-700 dark:text-gray-200">L: {Math.round(weather.low)}°C</span>
             </div>
           </div>
 

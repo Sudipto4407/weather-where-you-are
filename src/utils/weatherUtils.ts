@@ -92,8 +92,8 @@ export const getMockWeatherData = (location = 'New York'): WeatherForecast => {
     const conditions: WeatherCondition[] = ['sunny', 'cloudy', 'partly-cloudy', 'rain', 'thunderstorm', 'snow'];
     const condition = conditions[Math.floor(Math.random() * conditions.length)];
     
-    const high = Math.round(65 + Math.random() * 20);
-    const low = Math.round(high - 5 - Math.random() * 15);
+    const high = Math.round(18 + Math.random() * 10); // Celsius values
+    const low = Math.round(high - 3 - Math.random() * 8);
     
     return {
       date,
@@ -113,7 +113,7 @@ export const getMockWeatherData = (location = 'New York'): WeatherForecast => {
     currentWeather: {
       location,
       temperature: forecast[0].high,
-      feelsLike: forecast[0].high - 2,
+      feelsLike: forecast[0].high - 1,
       humidity: Math.floor(Math.random() * 100),
       windSpeed: Math.floor(Math.random() * 30),
       condition: currentCondition,

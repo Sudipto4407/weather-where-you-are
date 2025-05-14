@@ -31,8 +31,8 @@ const ForecastCard: React.FC<ForecastCardProps> = ({ forecast }) => {
                 </span>
               </div>
               <div className="flex space-x-2">
-                <span className="font-medium">{Math.round(day.high)}°</span>
-                <span className="text-gray-500">{Math.round(day.low)}°</span>
+                <span className="font-medium">{Math.round(day.high)}°C</span>
+                <span className="text-gray-500">{Math.round(day.low)}°C</span>
               </div>
             </div>
           ))}
