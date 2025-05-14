@@ -1,26 +1,49 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { WeatherForecast, WeatherCondition } from "../utils/weatherUtils";
+import { WeatherForecast, WeatherCondition, getMockWeatherData } from "../utils/weatherUtils";
 
-const API_KEY = ""; // You'll need to add your OpenWeatherMap API key here
-
+// Using Open-Meteo API which is free and doesn't require an API key
 export const useWeather = (initialLocation = "New York") => {
   const [weather, setWeather] = useState<WeatherForecast | null>(null);
   const [location, setLocation] = useState(initialLocation);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const mapCondition = (weatherId: number): WeatherCondition => {
-    // Map OpenWeatherMap weather codes to our app's conditions
-    if (weatherId >= 200 && weatherId < 300) return 'thunderstorm';
-    if (weatherId >= 300 && weatherId < 400) return 'shower';
-    if (weatherId >= 500 && weatherId < 600) return 'rain';
-    if (weatherId >= 600 && weatherId < 700) return 'snow';
-    if (weatherId >= 700 && weatherId < 800) return 'foggy';
-    if (weatherId === 800) return 'sunny';
-    if (weatherId > 800) return 'partly-cloudy';
-    return 'cloudy';
+  const mapCondition = (weatherCode: number): WeatherCondition => {
+    // Map WMO weather codes to our app's conditions
+    // https://www.nodc.noaa.gov/archive/arc0021/0002199/1.1/data/0-data/HTML/WMO-CODE/WMO4677.HTM
+    if (weatherCode === 0) return 'sunny'; // Clear sky
+    if (weatherCode === 1 || weatherCode === 2) return 'partly-cloudy'; // Mainly clear, partly cloudy
+    if (weatherCode === 3) return 'cloudy'; // Overcast
+    if (weatherCode >= 45 && weatherCode <= 48) return 'foggy'; // Fog
+    if (weatherCode >= 51 && weatherCode <= 55) return 'shower'; // Drizzle
+    if (weatherCode >= 56 && weatherCode <= 57) return 'shower'; // Freezing Drizzle
+    if (weatherCode >= 61 && weatherCode <= 65) return 'rain'; // Rain
+    if (weatherCode >= 66 && weatherCode <= 67) return 'shower'; // Freezing Rain
+    if (weatherCode >= 71 && weatherCode <= 77) return 'snow'; // Snow
+    if (weatherCode >= 80 && weatherCode <= 82) return 'shower'; // Rain showers
+    if (weatherCode >= 85 && weatherCode <= 86) return 'snow'; // Snow showers
+    if (weatherCode >= 95 && weatherCode <= 99) return 'thunderstorm'; // Thunderstorm
+    return 'cloudy'; // Default
+  };
+
+  const getWeatherDescription = (code: number): string => {
+    // Convert WMO weather codes to descriptions
+    if (code === 0) return 'Clear sky';
+    if (code === 1) return 'Mainly clear';
+    if (code === 2) return 'Partly cloudy';
+    if (code === 3) return 'Overcast';
+    if (code >= 45 && code <= 48) return 'Fog';
+    if (code >= 51 && code <= 55) return 'Drizzle';
+    if (code >= 56 && code <= 57) return 'Freezing drizzle';
+    if (code >= 61 && code <= 65) return 'Rain';
+    if (code >= 66 && code <= 67) return 'Freezing rain';
+    if (code >= 71 && code <= 77) return 'Snow';
+    if (code >= 80 && code <= 82) return 'Rain showers';
+    if (code >= 85 && code <= 86) return 'Snow showers';
+    if (code >= 95 && code <= 99) return 'Thunderstorm';
+    return 'Unknown';
   };
 
   const fetchWeather = async (searchLocation: string) => {
@@ -28,88 +51,79 @@ export const useWeather = (initialLocation = "New York") => {
     setError(null);
     
     try {
-      if (!API_KEY) {
-        toast.error("Please add your OpenWeatherMap API key to use real weather data");
-        throw new Error("API key is missing");
+      // First, get coordinates from the location name
+      const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchLocation)}&count=1&language=en&format=json`);
+      
+      if (!geoRes.ok) {
+        throw new Error("Location not found");
       }
-
-      // Fetch current weather
-      const currentRes = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=${searchLocation}&units=imperial&appid=${API_KEY}`
+      
+      const geoData = await geoRes.json();
+      
+      if (!geoData.results || geoData.results.length === 0) {
+        throw new Error(`Could not find location: ${searchLocation}`);
+      }
+      
+      const { latitude, longitude, name, country } = geoData.results[0];
+      
+      // Then get weather data using those coordinates
+      const weatherRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto`
       );
       
-      if (!currentRes.ok) {
-        const errorData = await currentRes.json();
-        throw new Error(errorData.message || "Failed to fetch current weather");
+      if (!weatherRes.ok) {
+        throw new Error("Failed to fetch weather data");
       }
       
-      const currentData = await currentRes.json();
+      const weatherData = await weatherRes.json();
       
-      // Fetch forecast
-      const forecastRes = await fetch(
-        `https://api.openweathermap.org/data/2.5/forecast?q=${searchLocation}&units=imperial&appid=${API_KEY}`
-      );
+      // Process current weather data
+      const currentWeatherCode = weatherData.current.weather_code;
+      const condition = mapCondition(currentWeatherCode);
       
-      if (!forecastRes.ok) {
-        const errorData = await forecastRes.json();
-        throw new Error(errorData.message || "Failed to fetch forecast");
-      }
-      
-      const forecastData = await forecastRes.json();
-      
-      // Process the data
-      const condition = mapCondition(currentData.weather[0].id);
-      
-      // Process forecast data (OpenWeatherMap returns forecast in 3-hour intervals)
-      const processedForecast = [];
-      const dailyForecasts = new Map();
-      
-      for (const item of forecastData.list) {
-        const date = new Date(item.dt * 1000);
-        const day = date.toDateString();
-        
-        // Only take one forecast per day
-        if (!dailyForecasts.has(day)) {
-          const condition = mapCondition(item.weather[0].id);
-          dailyForecasts.set(day, {
-            date: date,
-            condition: condition,
-            high: Math.round(item.main.temp_max),
-            low: Math.round(item.main.temp_min),
-            description: item.weather[0].description,
-            precipitation: item.pop * 100 // Probability of precipitation as percentage
-          });
-        }
-      }
-      
-      // Convert to array and take only next 7 days
-      const forecast = Array.from(dailyForecasts.values()).slice(0, 7);
+      // Process forecast data
+      const forecast = weatherData.daily.time.map((date: string, index: number) => {
+        const forecastCondition = mapCondition(weatherData.daily.weather_code[index]);
+        return {
+          date: new Date(date),
+          condition: forecastCondition,
+          high: Math.round(weatherData.daily.temperature_2m_max[index]),
+          low: Math.round(weatherData.daily.temperature_2m_min[index]),
+          description: getWeatherDescription(weatherData.daily.weather_code[index]),
+          precipitation: weatherData.daily.precipitation_probability_max[index] || 0
+        };
+      });
       
       // Build the weather object
-      const weatherData: WeatherForecast = {
-        location: currentData.name,
-        country: currentData.sys.country,
+      const processedWeather: WeatherForecast = {
+        location: name,
+        country: country,
         currentWeather: {
-          location: currentData.name,
-          temperature: Math.round(currentData.main.temp),
-          feelsLike: Math.round(currentData.main.feels_like),
-          humidity: currentData.main.humidity,
-          windSpeed: Math.round(currentData.wind.speed),
+          location: name,
+          temperature: Math.round(weatherData.current.temperature_2m),
+          feelsLike: Math.round(weatherData.current.apparent_temperature),
+          humidity: Math.round(weatherData.current.relative_humidity_2m),
+          windSpeed: Math.round(weatherData.current.wind_speed_10m),
           condition: condition,
-          description: currentData.weather[0].description,
-          updatedAt: new Date(),
-          high: Math.round(currentData.main.temp_max),
-          low: Math.round(currentData.main.temp_min)
+          description: getWeatherDescription(currentWeatherCode),
+          updatedAt: new Date(weatherData.current.time),
+          high: forecast[0].high,
+          low: forecast[0].low
         },
         forecast: forecast
       };
       
-      setWeather(weatherData);
+      setWeather(processedWeather);
+      setLocation(name);
     } catch (err) {
       console.error("Error fetching weather:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch weather data";
       setError(errorMessage);
       toast.error(errorMessage);
+      
+      // Fallback to mock data
+      const mockData = getMockWeatherData(searchLocation);
+      setWeather(mockData);
     } finally {
       setLoading(false);
     }
@@ -127,15 +141,11 @@ export const useWeather = (initialLocation = "New York") => {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
             try {
-              if (!API_KEY) {
-                fetchWeather(location);
-                return;
-              }
+              const { latitude, longitude } = position.coords;
               
               // Use reverse geocoding to get location name from coordinates
-              const { latitude, longitude } = position.coords;
               const geoRes = await fetch(
-                `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${API_KEY}`
+                `https://geocoding-api.open-meteo.com/v1/reverse?latitude=${latitude}&longitude=${longitude}&language=en&format=json`
               );
               
               if (!geoRes.ok) {
@@ -143,8 +153,9 @@ export const useWeather = (initialLocation = "New York") => {
               }
               
               const geoData = await geoRes.json();
-              if (geoData && geoData.length > 0) {
-                const locationName = geoData[0].name;
+              
+              if (geoData && geoData.results && geoData.results.length > 0) {
+                const locationName = geoData.results[0].name;
                 setLocation(locationName);
                 fetchWeather(locationName);
               } else {
@@ -176,4 +187,3 @@ export const useWeather = (initialLocation = "New York") => {
     searchLocation
   };
 };
-

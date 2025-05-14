@@ -39,14 +39,6 @@ const Index = () => {
               <div className="mb-6">
                 <ForecastCard forecast={weather.forecast} />
               </div>
-              
-              <div className="text-center text-sm text-gray-500 mt-8">
-                <p>
-                  Weather data is currently simulated for demonstration purposes.
-                  <br />
-                  In a production app, this would connect to a real weather API.
-                </p>
-              </div>
             </>
           ) : (
             <div className="text-center p-10 bg-white/80 dark:bg-gray-800/80 rounded-xl shadow">
