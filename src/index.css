@@ -1,10 +1,11 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -13,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 100% 50%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -32,22 +33,15 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -98,4 +92,47 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+.weather-card {
+  @apply relative overflow-hidden backdrop-blur-sm;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+}
+
+.cloud-bg {
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0) 100%),
+    linear-gradient(to bottom, #a8d5ff 0%, #e8f3ff 100%);
+}
+
+.rain-bg {
+  background-image:
+    linear-gradient(to bottom, #447cb5 0%, #91c1e7 100%);
+}
+
+.sunny-bg {
+  background-image:
+    linear-gradient(to bottom, #ffb75e 0%, #fff8e1 100%);
+}
+
+.snow-bg {
+  background-image:
+    linear-gradient(to bottom, #c7deff 0%, #f0f8ff 100%);
+}
+
+.storm-bg {
+  background-image:
+    linear-gradient(to bottom, #424c6e 0%, #606d9c 100%);
+}
+
+.forecast-card {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease;
+}
+
+.forecast-card:hover {
+  transform: translateY(-5px);
 }
